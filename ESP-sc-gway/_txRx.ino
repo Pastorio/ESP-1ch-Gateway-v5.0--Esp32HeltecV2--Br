@@ -33,6 +33,7 @@
 // function the actual transmission function is executed.
 // The LoraDown.tmst contains the timestamp that the tranmission should finish.
 // ----------------------------------------------------------------------------
+
 int sendPacket(uint8_t *buf, uint8_t length) 
 {
 	// Received package with Meta Data (for example):

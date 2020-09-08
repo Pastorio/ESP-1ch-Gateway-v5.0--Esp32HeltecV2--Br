@@ -43,7 +43,7 @@
 
 // Define the LoRa Frequncy band that is used. TTN Supported values are 915MHz, 868MHz and 433MHz.
 // So supported values are: 433 868 915
-#define _LFREQ 868
+#define _LFREQ 915
 
 // The spreading factor is the most important parameter to set for a single channel
 // gateway. It specifies the speed/datarate in which the gateway and node communicate.
@@ -52,7 +52,7 @@
 // This parameters contains the default value of SF, the actual version can be set with
 // the webserver and it will be stored in SPIFF
 // NOTE: The frequency is set in the loraModem.h file and is default 868.100000 MHz.
-#define _SPREADING SF9
+#define _SPREADING SF7
 
 // Channel Activity Detection
 // This function will scan for valid LoRa headers and determine the Spreading 
@@ -84,10 +84,11 @@
 //	1: HALLARD
 //	2: COMRESULT pin out
 //	3: ESP32 Wemos pin out
-//	4: ESP32 TTGO pinning (should work for 433 and OLED too).
+//	4: ESP32 TTGO (including Heltec V1) pinning (should work for 433 and OLED too).
 //	5: ESP32 TTGO EU433 MHz with OLED
-//	6: Other, define your own in loraModem.h
-#define _PIN_OUT 1
+//	6: ESP32 Heltec V2 board (different Pinning than Heltec V1)
+//	7: Other, define your own in loraModem.h
+#define _PIN_OUT 6
 
 // Gather statistics on sensor and Wifi status
 // 0= No statistics
@@ -135,7 +136,7 @@
 // OLED==0; No OLED display connected
 // OLED==1; 0.9 Oled Screen based on SSD1306
 // OLED==2;	1"3 Oled screens for Wemos, 128x64 SH1106
-#define OLED 2
+#define OLED 0
 
 
 // Define whether we want to manage the gateway over UDP (next to management 
@@ -176,7 +177,7 @@
 // MQTT definitions, these settings should be standard for TTN
 // and need not changing
 #define _TTNPORT 1700						// Standard port for TTN
-#define _TTNSERVER "router.eu.thethings.network"
+#define _TTNSERVER "thethings.meshed.com.au"
 
 // If you have a second back-end server defined such as Semtech or loriot.io
 // your can define _THINGPORT and _THINGSERVER with your own value.
@@ -192,16 +193,16 @@
 #define _LOCALSERVER 0						// See server definitions for decodes
 
 // Gateway Ident definitions
-#define _DESCRIPTION "ESP Gateway"			// Name of the gateway
-#define _EMAIL "mw12554@hotmail.com"		// Owner
-#define _PLATFORM "ESP8266"
-#define _LAT 52.0
-#define _LON 5.0
+#define _DESCRIPTION "ESP32 Gateway"			// Name of the gateway
+#define _EMAIL "SEU_EMAIL@Email.com"		// Owner
+#define _PLATFORM "ESP32"
+#define _LAT -24.0
+#define _LON -53.0
 #define _ALT 1								// Altitude
 
 // ntp
 // Please add daylight saving time to NTP_TIMEZONES when desired
-#define NTP_TIMESERVER "nl.pool.ntp.org"	// Country and region specific
+#define NTP_TIMESERVER "br.pool.ntp.org"	// Country and region specific
 #define NTP_TIMEZONES	2					// How far is our Timezone from UTC (excl daylight saving/summer time)
 #define SECS_IN_HOUR	3600
 #define NTP_INTR 0							// Do NTP processing with interrupts or in loop();
@@ -260,8 +261,8 @@ struct wpas {
 //
 wpas wpa[] = {
 	{ "" , "" },							// Reserved for WiFi Manager
-	{ "fire", "water" },
-	{ "ape", "beer" }
+	{ "RedeWIFI", "SENHA" },
+	{ "", "" }
 };
 
 // For asserting and testing the following defines are used.
