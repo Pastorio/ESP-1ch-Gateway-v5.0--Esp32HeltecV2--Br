@@ -97,19 +97,33 @@ int freqs [] = {
 // US902=928
 // AU915-928
 int freqs [] = {
-	// Uplink
-	903900000, 									// Channel 0, SF7BW125 to SF10BW125 primary
-	904100000, 									// Ch 1, SF7BW125 to SF10BW125
-	904300000, 									// Ch 2, SF7BW125 to SF10BW125
-	904500000, 									// Ch 3, SF7BW125 to SF10BW125
-	904700000, 									// Ch 4, SF7BW125 to SF10BW125
-	904900000, 									// Ch 5, SF7BW125 to SF10BW125
-	905100000, 									// Ch 6, SF7BW125 to SF10BW125
-	905300000, 									// Ch 7, SF7BW125 to SF10BW125
-	904600000 									// Ch 8, SF8BW500 
+	  // Uplink
+//  US902-928
+//	903900000, 									// Channel 0, SF7BW125 to SF10BW125 primary
+//	904100000, 									// Ch 1, SF7BW125 to SF10BW125
+//	904300000, 									// Ch 2, SF7BW125 to SF10BW125
+//	904500000, 									// Ch 3, SF7BW125 to SF10BW125
+//	904700000, 									// Ch 4, SF7BW125 to SF10BW125
+//	904900000, 									// Ch 5, SF7BW125 to SF10BW125
+//  905100000, 									// Ch 6, SF7BW125 to SF10BW125
+//	905300000, 									// Ch 7, SF7BW125 to SF10BW125
+//	904600000 									// Ch 8, SF8BW500 
+
+//  AU915
+    916800000,                  // Ch 0
+    917000000,                  // Ch 1
+    917200000,                  // Ch 2
+    917400000,                  // Ch 3
+    917500000,                  // Ch 4
+    917600000,                  // Ch 5
+    918000000,                  // Ch 6
+    916800000,                  // Ch 7
+    918200000,                  // Ch 8
+	
+	
 	// Downlink
 	// We should specify downlink frequencies here											
-												// SFxxxBW500
+	// SFxxxBW500
 };
 #else
 int freqs [] = {
@@ -529,4 +543,3 @@ struct LoraUp {
 #define MGT_RESET					0x15		// Not a LoRa Gateway Spec message
 #define MGT_SET_SF					0x16
 #define MGT_SET_FREQ				0x17
-

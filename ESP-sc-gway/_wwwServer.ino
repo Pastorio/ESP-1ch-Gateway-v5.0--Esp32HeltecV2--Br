@@ -1403,4 +1403,3 @@ static void interruptData()
 } // interruptData
 
 #endif // A_SERVER==1
-

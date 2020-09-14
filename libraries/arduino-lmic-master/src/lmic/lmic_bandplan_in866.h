@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2014-2016 IBM Corporation.
-* Copyright (c) 2017 MCCI Corporation.
+* Copyright (c) 2017, 2019 MCCI Corporation.
 * All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -26,15 +26,17 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _lmic_in866_h_
-# define _lmic_in866_h_
+#ifndef _lmic_bandplan_in866_h_
+# define _lmic_bandplan_in866_h_
 
 #ifndef _lmic_eu_like_h_
 # include "lmic_eu_like.h"
 #endif
 
+// return maximum frame length (including PHY header) for this data rate (in866); 0 --> not valid dr.
 uint8_t LMICin866_maxFrameLen(uint8_t dr);
-#define maxFrameLen(dr) LMICin866_maxFrameLen(dr)
+// return maximum frame length (including PHY header) for this data rate; 0 --> not valid dr.
+#define LMICbandplan_maxFrameLen(dr) LMICin866_maxFrameLen(dr)
 
 int8_t LMICin866_pow2dBm(uint8_t mcmd_ladr_p1);
 #define pow2dBm(mcmd_ladr_p1)   LMICin866_pow2dBm(mcmd_ladr_p1)
@@ -54,13 +56,7 @@ LMICin866_isValidBeacon1(const uint8_t *d) {
 
 // override default for LMICbandplan_isFSK()
 #undef LMICbandplan_isFSK
-#define LMICbandplan_isFSK()    (/* TX datarate */LMIC.rxsyms == IN866_DR_FSK)
-
-// txDone handling for FSK.
-void
-LMICin866_txDoneFSK(ostime_t delay, osjobcb_t func);
-
-#define LMICbandplan_txDoneFsk(delay, func) LMICin866_txDoneFSK(delay, func)
+#define LMICbandplan_isFSK()    (/* TX datarate */LMIC.dndr == IN866_DR_FSK)
 
 #define LMICbandplan_getInitialDrJoin() (IN866_DR_SF7)
 
@@ -82,4 +78,7 @@ ostime_t LMICin866_nextJoinState(void);
 void LMICin866_initDefaultChannels(bit_t join);
 #define LMICbandplan_initDefaultChannels(join)  LMICin866_initDefaultChannels(join)
 
-#endif // _lmic_in866_h_
+void LMICin866_setRx1Params(void);
+#define LMICbandplan_setRx1Params()     LMICin866_setRx1Params()
+
+#endif // _lmic_bandplan_in866_h_

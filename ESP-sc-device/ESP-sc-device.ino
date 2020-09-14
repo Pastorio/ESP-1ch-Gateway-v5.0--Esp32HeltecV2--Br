@@ -1,32 +1,34 @@
 /*******************************************************************************
  * Copyright (c) 2015 Thomas Telkamp and Matthijs Kooijman
  * Copyright (c) 2018 Terry Moore, MCCI
- * Copyright (c) 2018 Thomas Laurenson
  *
  * Permission is hereby granted, free of charge, to anyone
  * obtaining a copy of this document and accompanying files,
  * to do whatever they want with them without any restriction,
  * including, but not limited to, copying, modification and redistribution.
  * NO WARRANTY OF ANY KIND IS PROVIDED.
- * 
- * Sketch Summary:
- * Target device: Adafruit Feather M0 LoRa US900
- * Target frequency: AU915 sub-band 2 (916.8 to 918.2 uplink)
- * Authentication mode: Activation by Personalisation (ABP)
  *
- * This example requires the following modification before upload:
- * 1) Enter a valid Network Session Key (NWKSKEY)
- *    For example: 0x07f319fc
- * 2) Enter a valid Application Session Key (APPSKEY)
- *    For example: { 0xd9, 0x54, 0xce, 0xbe, 0x9b, 0x5b, 0x76, 0x2d, 0x56, 0x26, 0xc9, 0x4d, 0x82, 0x22, 0xf3, 0xad };
- * 3) Enter a valid Device Address (DEVADDR)
- *    For example: { 0xe4, 0x07, 0xe3, 0x3b, 0xef, 0xf3, 0x80, 0x6c, 0x7c, 0x6e, 0x42, 0x43, 0x56, 0x7c, 0x22, 0x37 };
- * 
- * The NWKSKEY, APPSKEY and DEVADDR values should be obtained from your
- * LoRaWAN server (e.g., TTN or any private LoRa provider).
+ * This example sends a valid LoRaWAN packet with payload "Hello,
+ * world!", using frequency and encryption settings matching those of
+ * the The Things Network.
  *
+ * This uses ABP (Activation-by-personalisation), where a DevAddr and
+ * Session keys are preconfigured (unlike OTAA, where a DevEUI and
+ * application key is configured, while the DevAddr and session keys are
+ * assigned/generated in the over-the-air-activation procedure).
+ *
+ * Note: LoRaWAN per sub-band duty-cycle limitation is enforced (1% in
+ * g1, 0.1% in g2), but not the TTN fair usage policy (which is probably
+ * violated by this sketch when left running for longer)!
+ *
+ * To use this sketch, first register your application and device with
+ * the things network, to set or generate a DevAddr, NwkSKey and
+ * AppSKey. Each device should have their own unique values for these
+ * fields.
+ *
+ * Do not forget to define the radio type correctly in arduino-lmic/project_config/lmic_project_config.h
+ * and the pin mapping of you device in lines 81-86
  *******************************************************************************/
-
 #include <lmic.h>
 #include <hal/hal.h>
 #include <SPI.h>
@@ -46,39 +48,40 @@
 #endif
 
 // LoRaWAN NwkSKey, network session key
-static const PROGMEM u1_t NWKSKEY[16] = { FILLMEIN };
+// This should be in big-endian (aka msb).
+static const PROGMEM u1_t NWKSKEY[16] = { NetworkSessionKey };
 
 // LoRaWAN AppSKey, application session key
-static const u1_t PROGMEM APPSKEY[16] = { FILLMEIN };
+// This should also be in big-endian (aka msb).
+static const u1_t PROGMEM APPSKEY[16] = { AppSessionKey };
 
 // LoRaWAN end-device address (DevAddr)
 // See http://thethingsnetwork.org/wiki/AddressSpace
-// The library converts the address to network byte order as needed.
-static const u4_t DEVADDR = FILLMEIN; // <-- Change this address for every node!
+// The library converts the address to network byte order as needed, so this should be in big-endian (aka msb) too.
+static const u4_t DEVADDR = 0xAppSessionKey; // <-- Change this address for every node!
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
-// DISABLE_JOIN is set in config.h, otherwise the linker will complain).
+// DISABLE_JOIN is set in arduino-lmic/project_config/lmic_project_config.h,
+// otherwise the linker will complain).
 void os_getArtEui (u1_t* buf) { }
 void os_getDevEui (u1_t* buf) { }
 void os_getDevKey (u1_t* buf) { }
 
-static uint8_t mydata[] = "Hello world!";
+static uint8_t mydata[] = "Hello, world!";
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds (might become longer due to duty
 // cycle limitations).
-const unsigned TX_INTERVAL = 5;
+const unsigned TX_INTERVAL = 60;
 
-// Pin mapping
-// Specifically for Adafruit Feather M0 LoRA
+
+// Pin mapping for the Heltec ESP32 LoRa V2 
 const lmic_pinmap lmic_pins = {
-    .nss = 8,                   // chip select on feather (rf95module) CS
+    .nss = 18,
     .rxtx = LMIC_UNUSED_PIN,
-    .rst = 4,                   // reset pin
-    .dio = {3, 6, 5},           // assumes external jumpers [feather_lora_jumper]
-                                // DIO1 is on JP1-1: is io1 - we connect to GPO6
-                                // DIO1 is on JP5-3: is D2 - we connect to GPO5
+    .rst = 14,
+    .dio = {26, 35, 34},
 };
 
 void onEvent (ev_t ev) {
@@ -156,6 +159,15 @@ void onEvent (ev_t ev) {
         case EV_TXSTART:
             Serial.println(F("EV_TXSTART"));
             break;
+        case EV_TXCANCELED:
+            Serial.println(F("EV_TXCANCELED"));
+            break;
+        case EV_RXSTART:
+            /* do not print anything -- it wrecks timing */
+            break;
+        case EV_JOIN_TXCOMPLETE:
+            Serial.println(F("EV_JOIN_TXCOMPLETE: no JoinAccept"));
+            break;
         default:
             Serial.print(F("Unknown event: "));
             Serial.println((unsigned) ev);
@@ -171,14 +183,12 @@ void do_send(osjob_t* j){
         // Prepare upstream data transmission at the next possible time.
         LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);
         Serial.println(F("Packet queued"));
-        Serial.print(F("Sending packet on frequency: "));
         Serial.println(LMIC.freq);
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
 
 void setup() {
-//    pinMode(13, OUTPUT); 
     while (!Serial); // wait for Serial to be initialized
     Serial.begin(115200);
     delay(100);     // per sample code on RF_95 test
@@ -212,39 +222,25 @@ void setup() {
     LMIC_setSession (0x13, DEVADDR, NWKSKEY, APPSKEY);
     #endif
 
-    #if defined(CFG_eu868)
-    // Set up the channels used by the Things Network, which corresponds
-    // to the defaults of most gateways. Without this, only three base
-    // channels from the LoRaWAN specification are used, which certainly
-    // works, so it is good for debugging, but can overload those
-    // frequencies, so be sure to configure the full frequency range of
-    // your network here (unless your network autoconfigures them).
-    // Setting up channels should happen after LMIC_setSession, as that
-    // configures the minimal channel set.
-    LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
-    LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
-    // TTN defines an additional channel at 869.525Mhz using SF9 for class B
-    // devices' ping slots. LMIC does not have an easy way to define set this
-    // frequency and support for class B is spotty and untested, so this
-    // frequency is not configured here.
+    #if defined(CFG_au915)// AU channel setup
+    // Instead of using selectSubBand, which will cycle through a sub-band of 8
+    // channels. We'll configure the device to only use one frequency.
+    // First disable all sub-bands
+    for (int b = 0; b < 8; ++b) {
+      LMIC_disableSubBand(b);
+    }
+    // Then enable the channel(s) you want to use
+    LMIC_enableChannel(8); // 8 - 916800000 ...
+    //LMIC_enableChannel(17);
+    
     #elif defined(CFG_us915)
-    // NA-US channels 0-71 are configured automatically
+    // NA-US and AU channels 0-71 are configured automatically
     // but only one group of 8 should (a subband) should be active
     // TTN recommends the second sub band, 1 in a zero based count.
     // https://github.com/TheThingsNetwork/gateway-conf/blob/master/US-global_conf.json
     LMIC_selectSubBand(1);
-    // Specify to operate on AU915 sub-band 2
-    #elif defined(CFG_au921)
-    Serial.println(F("Loading AU915/AU921 Configuration..."));
-    // Set to AU915 sub-band 2
-    LMIC_selectSubBand(1); 
+    #else
+    # error Region not supported
     #endif
 
     // Disable link check validation
@@ -253,7 +249,7 @@ void setup() {
     // TTN uses SF9 for its RX2 window.
     LMIC.dn2Dr = DR_SF9;
 
-    // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
+    // Set data rate and transmit power for uplink
     LMIC_setDrTxpow(DR_SF7,14);
 
     // Start job
@@ -269,7 +265,5 @@ void loop() {
     else {
       digitalWrite(13, LOW);
     }
-      
     os_runloop_once();
-    
 }

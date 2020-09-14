@@ -19,7 +19,11 @@ namespace Arduino_LMIC {
 
 const HalPinmap_t *GetPinmap_ThisBoard(void)
         {
-#if defined(ARDUINO_SAMD_FEATHER_M0)
+/*
+|| Adafruit BSPs are not consistent -- m0 express defs ARDUINO_SAMD_FEATHER_M0,
+|| m0 defs ADAFRUIT_FEATHER_M0
+*/
+#if defined(ARDUINO_SAMD_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0)
 # if defined(ARDUINO_MCCI_CATENA_4420)
         // this uses a radiowing and an odd configuration
         return GetPinmap_Catena4420();
@@ -43,10 +47,22 @@ const HalPinmap_t *GetPinmap_ThisBoard(void)
       /* legacy names */ \
       defined(ARDUINO_CATENA_4612)
         return GetPinmap_Catena4612();
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+        return GetPinmap_Catena4617();
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+        return GetPinmap_Catena4618();
+#elif defined(ARDUINO_MCCI_CATENA_4630)
+        return GetPinmap_Catena4630();
 #elif defined(ARDUINO_MCCI_CATENA_4801)
         return GetPinmap_Catena4801();
+#elif defined(ARDUINO_DISCO_L072CZ_LRWAN1)
+        return GetPinmap_Disco_L072cz_Lrwan1();
 #elif defined(PINNOCHIO_SCOUT)
         return GetPinmap_PinnochioScount();
+#elif defined(ARDUINO_TTGO_LoRa32_V1)
+        return GetPinmap_ttgo_lora32_v1();
+#elif defined(ARDUINO_HELTEC_WIFI_LORA_32) || defined(ARDUINO_HELTEC_WIFI_LORA_32_V2) || defined(ARDUINO_HELTEC_WIRELESS_STICK)
+        return GetPinmap_heltec_lora32();
 #else
         #pragma message("Board not supported -- use an explicit pinmap")
         return nullptr;

@@ -75,7 +75,11 @@ static osjob_t sendjob;
 const unsigned TX_INTERVAL = 60;
 
 // Pin mapping
-#if defined(ARDUINO_SAMD_FEATHER_M0)
+//
+// Adafruit BSPs are not consistent -- m0 express defs ARDUINO_SAMD_FEATHER_M0,
+// m0 defs ADAFRUIT_FEATHER_M0
+//
+#if defined(ARDUINO_SAMD_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0)
 // Pin mapping for Adafruit Feather M0 LoRa, etc.
 const lmic_pinmap lmic_pins = {
     .nss = 8,
@@ -95,9 +99,9 @@ const lmic_pinmap lmic_pins = {
     .nss = 8,
     .rxtx = LMIC_UNUSED_PIN,
     .rst = 4,
-    .dio = {3, 6, LMIC_UNUSED_PIN},
+    .dio = {7, 6, LMIC_UNUSED_PIN},
     .rxtx_rx_active = 0,
-    .rssi_cal = 8,              // LBT cal for the Adafruit Feather M0 LoRa, in dB
+    .rssi_cal = 8,              // LBT cal for the Adafruit Feather 32U4 LoRa, in dB
     .spi_freq = 1000000,
 };
 #elif defined(ARDUINO_CATENA_4551)
@@ -117,6 +121,13 @@ const lmic_pinmap lmic_pins = {
 #else
 # error "Unknown target"
 #endif
+
+void printHex2(unsigned v) {
+    v &= 0xff;
+    if (v < 16)
+        Serial.print('0');
+    Serial.print(v, HEX);
+}
 
 void onEvent (ev_t ev) {
     Serial.print(os_getTime());
@@ -149,20 +160,20 @@ void onEvent (ev_t ev) {
               Serial.println(netid, DEC);
               Serial.print("devaddr: ");
               Serial.println(devaddr, HEX);
-              Serial.print("artKey: ");
-              for (int i=0; i<sizeof(artKey); ++i) {
+              Serial.print("AppSKey: ");
+              for (size_t i=0; i<sizeof(artKey); ++i) {
                 if (i != 0)
                   Serial.print("-");
-                Serial.print(artKey[i], HEX);
+                printHex2(artKey[i]);
               }
               Serial.println("");
-              Serial.print("nwkKey: ");
-              for (int i=0; i<sizeof(nwkKey); ++i) {
+              Serial.print("NwkSKey: ");
+              for (size_t i=0; i<sizeof(nwkKey); ++i) {
                       if (i != 0)
                               Serial.print("-");
-                      Serial.print(nwkKey[i], HEX);
+                      printHex2(nwkKey[i]);
               }
-              Serial.println("");
+              Serial.println();
             }
             // Disable link check validation (automatically enabled
             // during join, but because slow data rates change max TX
@@ -223,6 +234,16 @@ void onEvent (ev_t ev) {
         case EV_TXSTART:
             Serial.println(F("EV_TXSTART"));
             break;
+        case EV_TXCANCELED:
+            Serial.println(F("EV_TXCANCELED"));
+            break;
+        case EV_RXSTART:
+            /* do not print anything -- it wrecks timing */
+            break;
+        case EV_JOIN_TXCOMPLETE:
+            Serial.println(F("EV_JOIN_TXCOMPLETE: no JoinAccept"));
+            break;
+
         default:
             Serial.print(F("Unknown event: "));
             Serial.println((unsigned) ev);
