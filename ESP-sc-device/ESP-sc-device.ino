@@ -33,13 +33,12 @@
 #include <hal/hal.h>
 #include <SPI.h>
 
-//
 // For normal use, we require that you edit the sketch to replace FILLMEIN
 // with values assigned by the TTN console. However, for regression tests,
 // we want to be able to compile these scripts. The regression tests define
 // COMPILE_REGRESSION_TEST, and in that case we define FILLMEIN to a non-
 // working but innocuous value.
-//
+
 #ifdef COMPILE_REGRESSION_TEST
 # define FILLMEIN 0
 #else
@@ -58,7 +57,7 @@ static const u1_t PROGMEM APPSKEY[16] = { AppSessionKey };
 // LoRaWAN end-device address (DevAddr)
 // See http://thethingsnetwork.org/wiki/AddressSpace
 // The library converts the address to network byte order as needed, so this should be in big-endian (aka msb) too.
-static const u4_t DEVADDR = 0xAppSessionKey; // <-- Change this address for every node!
+static const u4_t DEVADDR = 0xDevAddr; // <-- Change this address for every node!
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -230,15 +229,8 @@ void setup() {
       LMIC_disableSubBand(b);
     }
     // Then enable the channel(s) you want to use
-    LMIC_enableChannel(8); // 8 - 916800000 ...
-    //LMIC_enableChannel(17);
-    
-    #elif defined(CFG_us915)
-    // NA-US and AU channels 0-71 are configured automatically
-    // but only one group of 8 should (a subband) should be active
-    // TTN recommends the second sub band, 1 in a zero based count.
-    // https://github.com/TheThingsNetwork/gateway-conf/blob/master/US-global_conf.json
-    LMIC_selectSubBand(1);
+    LMIC_enableChannel(8); // 8 -> 916800000 ...
+
     #else
     # error Region not supported
     #endif
